@@ -1,5 +1,6 @@
 import PostModel from "../model/model.js";
-import {cloudinary} from "../config/cloudinary.js"; 
+import { cloudinary } from "../config/cloudinary.js";
+import streamifier from "streamifier";
 
 export const createPost = async (req, res) => {
   try {
@@ -19,14 +20,23 @@ export const createPost = async (req, res) => {
       });
     }
 
-    // ✅ Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: "image",
+    // ✅ Upload from buffer to Cloudinary
+    const uploadPromise = new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: "image" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
     });
+
+    const result = await uploadPromise;
 
     const newPost = new PostModel({
       title,
-      image: result.secure_url, // single image string
+      image: result.secure_url,
     });
 
     await newPost.save();
