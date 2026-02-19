@@ -22,7 +22,7 @@ function App() {
       formData.append("image", image);
 
       const response = await axios.post(
-        "http://localhost:5000/api/posts",
+        "https://promt-generator-six.vercel.app/api/posts",
         formData,
         {
           headers: {
