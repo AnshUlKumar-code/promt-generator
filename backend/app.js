@@ -35,7 +35,13 @@ app.use((err, req, res, next) => {
     error: err.stack // Add this temporarily to see full error
   });
 });
-
+app.get('/db-status', async (req, res) => {
+  res.json({
+    mongoUri: process.env.MONGO_URI ? 'Set' : 'Not set',
+    readyState: mongoose.connection.readyState,
+    // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  });
+});
 
 // const PORT = process.env.PORT || 5000;
 // app.listen(PORT, () => {
