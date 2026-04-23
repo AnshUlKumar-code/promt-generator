@@ -4,6 +4,14 @@ import streamifier from "streamifier";
 
 export const createPost = async (req, res) => {
   try {
+    // ✅ DEBUG: Log everything
+    console.log("=== DEBUG INFO ===");
+    console.log("Content-Type:", req.headers['content-type']);
+    console.log("req.body:", JSON.stringify(req.body, null, 2));
+    console.log("req.file:", req.file ? "File present" : "No file");
+    console.log("Description from body:", req.body.description);
+    console.log("==================");
+    
     const { 
       title, 
       description, 
@@ -11,11 +19,15 @@ export const createPost = async (req, res) => {
       category_id 
     } = req.body;
 
-    // ✅ Validate required fields (description is now required)
+    // ✅ Validate required fields
     if (!description) {
       return res.status(400).json({
         success: false,
         message: "Description is required",
+        debug: { 
+          receivedBody: req.body,
+          contentType: req.headers['content-type']
+        }
       });
     }
 
@@ -41,29 +53,27 @@ export const createPost = async (req, res) => {
 
     const result = await uploadPromise;
 
-    // ✅ Parse tags if it's a JSON string (from form-data)
+    // ✅ Parse tags
     let parsedTags = tags;
     if (tags && typeof tags === "string") {
       try {
         parsedTags = JSON.parse(tags);
       } catch (e) {
-        // If not JSON, split by comma
         parsedTags = tags.split(",").map(tag => tag.trim());
       }
     }
 
-    // ✅ Create new post with updated schema
+    // ✅ Create new post
     const newPost = new PostModel({
-      title: title || null,           // Optional
-      description,                     // Required
-      image_url: result.secure_url,   // Required (field name changed from 'image' to 'image_url')
-      tags: parsedTags || [],          // Optional, defaults to []
-      category_id: category_id || null // Optional, can be ObjectId string
+      title: title || null,
+      description: description.trim(),
+      image_url: result.secure_url,
+      tags: parsedTags || [],
+      category_id: category_id || null
     });
 
     await newPost.save();
 
-    // ✅ Return response with formatted data
     res.status(201).json({
       success: true,
       message: "Post created successfully",
